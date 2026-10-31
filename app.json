@@ -1,0 +1,40 @@
+{
+  "expo": {
+    "name": "Professor Martin",
+    "slug": "profmartin-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#1F3A3D"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "co.profmartin.app",
+      "infoPlist": {
+        "NSMotionUsageDescription": "برای شمارش قدم‌های شما با کفش پروفسور مارتین و محاسبه پاداش، به داده‌های گام‌شمار دستگاه نیاز داریم."
+      }
+    },
+    "android": {
+      "package": "co.profmartin.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#1F3A3D"
+      },
+      "permissions": [
+        "android.permission.ACTIVITY_RECOGNITION"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "برای اسکن کد QR روی جعبه کفش و اسکن سه‌بعدی پا به دسترسی دوربین نیاز است."
+        }
+      ],
+      "expo-font"
+    ]
+  }
+}

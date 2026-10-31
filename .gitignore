@@ -1,0 +1,18 @@
+# وابستگی‌ها و خروجی‌های ساخت
+node_modules/
+dist/
+web-build/
+.expo/
+
+# پروژه‌ی نیتیو در CI از روی app.json ساخته می‌شود (expo prebuild)؛
+# فقط در ریشه نادیده می‌گیریم تا modules/foot-scan/ios (کد Swift ماژول) در مخزن بماند.
+/ios/
+/android/
+
+# فایل‌های حساس و موقت
+.env
+.env.*
+!.env.example
+*.ipa
+*.log
+.DS_Store

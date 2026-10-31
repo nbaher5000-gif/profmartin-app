@@ -1,0 +1,86 @@
+name: iOS unsigned build (for Sideloadly)
+
+# ساخت IPA امضانشده‌ی اپ روی مک ابری GitHub، بدون نیاز به اکانت Apple Developer.
+# بعد از بیلد، فایل IPA را از بخش Artifacts دانلود و با Sideloadly (Apple ID رایگان) روی آیفون نصب کنید.
+# راهنمای کامل: SIDELOAD-IOS.md
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ios-unsigned
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 75
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install JS dependencies
+        run: npm ci
+
+      # پوشه‌ی ios از روی app.json ساخته می‌شود و ماژول محلی modules/foot-scan خودکار لینک می‌شود
+      - name: Generate native iOS project
+        run: npx expo prebuild --platform ios --no-install
+
+      - name: Install CocoaPods dependencies
+        working-directory: ios
+        run: pod install
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      # Release: بسته‌ی جاوااسکریپت داخل اپ جاسازی می‌شود و برای اجرا به سرور Metro نیازی نیست
+      - name: Build unsigned archive
+        working-directory: ios
+        run: |
+          set -o pipefail
+          WORKSPACE=$(ls -d *.xcworkspace | head -n 1)
+          SCHEME="${WORKSPACE%.xcworkspace}"
+          echo "workspace=$WORKSPACE scheme=$SCHEME"
+          xcodebuild \
+            -workspace "$WORKSPACE" \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            archive \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            2>&1 | tee "$RUNNER_TEMP/xcodebuild.log"
+
+      - name: Package unsigned IPA
+        run: |
+          APP=$(find "$RUNNER_TEMP/App.xcarchive/Products/Applications" -maxdepth 1 -name "*.app" | head -n 1)
+          if [ -z "$APP" ]; then echo "No .app found in the archive"; exit 1; fi
+          rm -rf Payload ProfessorMartin-unsigned.ipa
+          mkdir Payload
+          cp -R "$APP" Payload/
+          zip -qry ProfessorMartin-unsigned.ipa Payload
+          ls -lh ProfessorMartin-unsigned.ipa
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: ProfessorMartin-unsigned-ipa
+          path: ProfessorMartin-unsigned.ipa
+          retention-days: 7
+          if-no-files-found: error
+
+      # اگر بیلد شکست خورد، این لاگ را برای بررسی خطای کامپایل Swift بفرستید
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-log
+          path: ${{ runner.temp }}/xcodebuild.log
+          if-no-files-found: ignore
+          retention-days: 7
